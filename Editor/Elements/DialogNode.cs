@@ -20,6 +20,8 @@ namespace Fab.Dialog.Editor.Elements
         protected static readonly string choiceTextFieldClassname = ussClassname + "__choice-text-field";
         protected static readonly string buttonClassname = ussClassname + "__button";
         protected static readonly string customDataClassname = ussClassname + "__custom-data-container";
+        protected static readonly string helpButtonClassName = ussClassname + "__text-help-button";
+
 
         protected static readonly string textFoldoutName = "text-foldout";
         public string ID { get; set; }
@@ -106,6 +108,13 @@ namespace Fab.Dialog.Editor.Elements
 
             Foldout textFoldout = DialogElementUtility.CreateFoldout("Dialog Text");
             textFoldout.name = textFoldoutName;
+
+            Button textHelpButton = new Button(() => Debug.Log("Help!!"));
+            textHelpButton.text = "i";
+            textHelpButton.AddToClassList(helpButtonClassName);
+
+            textFoldout.Q(className: "unity-foldout__input").Add(textHelpButton);
+
 
             TextField textTextField = DialogElementUtility.CreateTextArea(Text, change =>
             {

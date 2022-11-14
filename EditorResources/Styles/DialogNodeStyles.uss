@@ -5,6 +5,9 @@
 	--dialog-colors-window-4: #232527;
 	--dialog-colors-window-5: #252729;
 	--dialog-colors-window-6: #27292C;
+	--dialog-colors-window-7: #323439;
+	--dialog-colors-window-8: #37393C;
+	--dialog-colors-window-9: #47494C;
 	--dialog-colors-active: #FDD057;
 
 	--dialog-quote-font-size: 18px;
@@ -103,6 +106,28 @@
 .dialog-node__button:active{
 	background-color: var(--dialog-colors-window-3);
 	color: var(--dialog-colors-active)
+}
+
+.dialog-node__text-help-button.unity-button{
+	background-color: var(--dialog-colors-window-7);
+	border-radius: 10px;
+	border-color: var(--dialog-colors-window-4);
+	-unity-font-style: bold;
+	width: 20px;
+	height: 20px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	margin-right: 0px;
+	margin-left: auto;
+	padding: 2px
+}
+
+.dialog-node__text-help-button.unity-button:hover{
+	background-color: var(--dialog-colors-window-8);
+}
+
+.dialog-node__text-help-button.unity-button:active{
+	background-color: var(--dialog-colors-window-9);
 }
 
 TextField{
