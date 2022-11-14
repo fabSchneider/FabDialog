@@ -1,0 +1,18 @@
+{
+    "name": "Fab.Dialog.Editor",
+    "rootNamespace": "Fab.Dialog.Editor",
+    "references": [
+        "GUID:0543a3be231078c47bbea5d472dcb9ad"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

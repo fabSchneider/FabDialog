@@ -1,0 +1,12 @@
+{
+  "name": "com.fab.dialog",
+  "version": "0.1.0",
+  "displayName": "Dialog",
+  "description": "A dialog system for unity",
+  "unity": "2021.3",
+  "unityRelease": "3f1",
+  "keywords": [],
+  "author": {
+    "name": "Fabian Schneider"
+  }
+}
