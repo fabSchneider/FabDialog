@@ -47,82 +47,6 @@ namespace Fab.Dialog
             public List<DialogNodeData> nodes;
         }
 
-        private string OnCopy(IEnumerable<GraphElement> elements)
-        {
-            List<DialogNodeData> nodeData = new List<DialogNodeData>();
-
-            Dictionary<string, string> copyIDByOriginal = new Dictionary<string, string>();
-            foreach (GraphElement element in elements)
-            {
-                if (element is DialogNode node)
-                {
-                    DialogNodeData data = node.ToNodeData();
-                    // create a new Guid for this node
-                    string newID = DialogNode.CreateGuid();
-                    // keep track of old and new guid
-                    copyIDByOriginal.Add(data.ID, newID);
-                    data.ID = newID;
-                    nodeData.Add(data);
-                }
-            }
-
-            // replace all ids in choice data with new id's or remove if they
-            // are referencing a node that was not copied
-            foreach (DialogNodeData data in nodeData)
-            {
-                foreach (DialogChoiceData choice in data.Choices)
-                {
-                    if (!string.IsNullOrEmpty(choice.NodeID))
-                    {
-                        if (copyIDByOriginal.TryGetValue(choice.NodeID, out string copyID))
-                            choice.NodeID = copyID;
-                        else
-                            choice.NodeID = string.Empty;
-                    }
-                }
-            }
-
-            GraphCopyData copyData = new GraphCopyData()
-            {
-                nodes = nodeData
-            };
-
-            return JsonUtility.ToJson(copyData);
-        }
-
-        private void OnPaste(string operationName, string data)
-        {
-            if (operationName == "Paste")
-            {
-                GraphCopyData copyData = JsonUtility.FromJson<GraphCopyData>(data);
-
-                if (copyData.nodes.Count == 0)
-                    return;
-
-                // deselect all currently selected elements
-                ClearSelection();
-
-                Dictionary<string, DialogNode> nodesById = new Dictionary<string, DialogNode>();
-
-                foreach (DialogNodeData nodeData in copyData.nodes)
-                {
-                    // add an offset to the node position so that copy 
-                    //is not at the exact same position as the original
-
-                    nodeData.Position += new Vector2(50, 50);
-
-                    DialogNode node = CreateNode(nodeData);
-                    nodesById[node.ID] = node;
-                    AddToSelection(node);
-
-                    AddElement(node);
-                }
-
-                // connect nodes
-                DialogGraphUtility.ConnectNodes(this, nodesById);
-            }
-        }
-
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
         {
             List<Port> compatiblePorts = new List<Port>();
@@ -278,6 +202,82 @@ namespace Fab.Dialog
 
             Vector2 localMousePosition = contentViewContainer.WorldToLocal(mousePosition);
             return localMousePosition;
+        }
+
+        private string OnCopy(IEnumerable<GraphElement> elements)
+        {
+            List<DialogNodeData> nodeData = new List<DialogNodeData>();
+
+            Dictionary<string, string> copyIDByOriginal = new Dictionary<string, string>();
+            foreach (GraphElement element in elements)
+            {
+                if (element is DialogNode node)
+                {
+                    DialogNodeData data = node.ToNodeData();
+                    // create a new Guid for this node
+                    string newID = DialogNode.CreateGuid();
+                    // keep track of old and new guid
+                    copyIDByOriginal.Add(data.ID, newID);
+                    data.ID = newID;
+                    nodeData.Add(data);
+                }
+            }
+
+            // replace all ids in choice data with new id's or remove if they
+            // are referencing a node that was not copied
+            foreach (DialogNodeData data in nodeData)
+            {
+                foreach (DialogChoiceData choice in data.Choices)
+                {
+                    if (!string.IsNullOrEmpty(choice.NodeID))
+                    {
+                        if (copyIDByOriginal.TryGetValue(choice.NodeID, out string copyID))
+                            choice.NodeID = copyID;
+                        else
+                            choice.NodeID = string.Empty;
+                    }
+                }
+            }
+
+            GraphCopyData copyData = new GraphCopyData()
+            {
+                nodes = nodeData
+            };
+
+            return JsonUtility.ToJson(copyData);
+        }
+
+        private void OnPaste(string operationName, string data)
+        {
+            if (operationName == "Paste")
+            {
+                GraphCopyData copyData = JsonUtility.FromJson<GraphCopyData>(data);
+
+                if (copyData.nodes.Count == 0)
+                    return;
+
+                // deselect all currently selected elements
+                ClearSelection();
+
+                Dictionary<string, DialogNode> nodesById = new Dictionary<string, DialogNode>();
+
+                foreach (DialogNodeData nodeData in copyData.nodes)
+                {
+                    // add an offset to the node position so that copy 
+                    //is not at the exact same position as the original
+
+                    nodeData.Position += new Vector2(50, 50);
+
+                    DialogNode node = CreateNode(nodeData);
+                    nodesById[node.ID] = node;
+                    AddToSelection(node);
+
+                    AddElement(node);
+                }
+
+                // connect nodes
+                DialogGraphUtility.ConnectNodes(this, nodesById);
+            }
         }
     }
 }
