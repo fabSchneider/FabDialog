@@ -121,6 +121,39 @@ namespace Fab.Dialog.Editor.Elements
                 Text = change.newValue;
             });
 
+            textTextField.RegisterCallback<MouseUpEvent>(evt =>
+            {
+                textTextField.panel.contextualMenuManager.DisplayMenu(evt, evt.target);
+
+                evt.StopPropagation();
+                evt.PreventDefault();
+            });
+
+            textTextField.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
+            {
+                evt.menu.AppendAction("Create variable", action => 
+                {
+                    string selection = textTextField.text;
+                    int startIndex = Mathf.Min(textTextField.cursorIndex, textTextField.selectIndex);
+                    int endIndex = Mathf.Max(textTextField.cursorIndex, textTextField.selectIndex);
+
+                    selection = selection.Substring(startIndex, endIndex - startIndex);
+
+                    selection = selection.Trim();
+                    if (!string.IsNullOrEmpty(selection))
+                    {
+                        Port port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(string));
+                        port.portName = selection;
+                        inputContainer.Add(port);
+                    }
+
+                    Debug.Log("\""+selection+"\"");
+                });
+                evt.StopPropagation();
+                //evt.PreventDefault();
+            });
+
+
             textTextField.AddToClassList(textFieldClassname);
             textTextField.AddToClassList(quoteTextFieldClassname);
 
