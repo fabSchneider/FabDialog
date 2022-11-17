@@ -8,7 +8,7 @@ using UnityEngine;
 using Fab.Dialog.Editor.Elements;
 using System;
 
-namespace Fab.Dialog
+namespace Fab.Dialog.Editor
 {
     public class DialogGraphView : GraphView
     {
@@ -38,7 +38,7 @@ namespace Fab.Dialog
             serializeGraphElements += OnCopy;
             unserializeAndPaste += OnPaste;
 
-            OnGraphViewChanged();
+            graphViewChanged += OnGraphViewChanged;
         }
 
         [System.Serializable]
@@ -55,6 +55,8 @@ namespace Fab.Dialog
             {
                 if (startPort == port)
                     return;
+
+                // NOTE: Allow connecting to node's own input
 
                 //if (startPort.node == port.node)
                 //    return;
@@ -119,19 +121,19 @@ namespace Fab.Dialog
             }
         }
 
-        public DialogNode CreateNode(DialogType type, Vector2 localPosition)
+        public DialogChoiceNode CreateNode(DialogType type, Vector2 localPosition)
         {
             Type nodeType = Type.GetType($"Fab.Dialog.Editor.Elements.{type}Node");
-            DialogNode node = (DialogNode)Activator.CreateInstance(nodeType);
+            DialogChoiceNode node = (DialogChoiceNode)Activator.CreateInstance(nodeType);
             node.Initialize(this, localPosition);
 
             return node;
         }
 
-        public DialogNode CreateNode(DialogNodeData nodeData)
+        public DialogChoiceNode CreateNode(DialogNodeData nodeData)
         {
             Type nodeType = Type.GetType($"Fab.Dialog.Editor.Elements.{nodeData.DialogType}Node");
-            DialogNode node = (DialogNode)Activator.CreateInstance(nodeType);
+            DialogChoiceNode node = (DialogChoiceNode)Activator.CreateInstance(nodeType);
             node.Initialize(this, nodeData);
 
             return node;
@@ -161,36 +163,76 @@ namespace Fab.Dialog
             return group;
         }
 
-        private void OnGraphViewChanged()
+        private GraphViewChange OnGraphViewChanged(GraphViewChange changes)
         {
-            graphViewChanged = (changes) =>
+            // process all changes made to the graph view
+
+            // edges
+            if (changes.edgesToCreate != null)
             {
-                if (changes.edgesToCreate != null)
+                foreach (Edge edge in changes.edgesToCreate)
                 {
-                    foreach (Edge edge in changes.edgesToCreate)
+                    // update choice data for each edge
+
+                    DialogChoiceNode nextNode = (DialogChoiceNode)edge.input.node;
+                    DialogChoiceData choiceData = (DialogChoiceData)edge.output.userData;
+
+                    WeightedPath transition = new WeightedPath()
                     {
-                        DialogNode nextNode = (DialogNode)edge.input.node;
+                        TargetNodeID = nextNode.ID,
+                        Weight = 1f
+                    };
+
+                    choiceData.Paths.Add(transition);
+
+                    if (edge is WeightedEdge weightedEdge)
+                    {
+                        weightedEdge.WeightedTransition = transition;
+                    }                   
+                    
+                    //// update the weights on each weighted transition
+                    //// TODO: This should be done once after all transitions have been updated / removed
+                    //for (int i = 0; i < choiceData.Transitions.Count; i++)
+                    //{
+                    //    choiceData.Transitions[i].Weight = 1f / choiceData.Transitions.Count;
+                    //}
+
+                    // create/update weight label on the edge
+
+                    //Label weightLabel = edge.Q<Label>(name: "weight-label");
+                    //if(weightLabel == null)
+                    //{
+                    //    weightLabel = new Label();
+                    //    weightLabel.name = "weight-label";
+                    //    weightLabel.style.marginBottom = StyleKeyword.Auto;
+                    //    weightLabel.style.marginTop = StyleKeyword.Auto;
+                    //    weightLabel.style.marginLeft = StyleKeyword.Auto;
+                    //    weightLabel.style.marginRight = StyleKeyword.Auto;
+                    //    edge.edgeControl.Add(weightLabel);
+                    //}
+
+                    //weightLabel.text = 0.42f.ToString();
+                }
+            }
+
+            if (changes.elementsToRemove != null)
+            {
+                Type edgeType = typeof(Edge);
+                foreach (GraphElement element in changes.elementsToRemove)
+                {
+                    if (element is Edge edge)
+                    {
                         DialogChoiceData choiceData = (DialogChoiceData)edge.output.userData;
 
-                        choiceData.NodeID = nextNode.ID;
-                    }
-                }
-
-                if (changes.elementsToRemove != null)
-                {
-                    Type edgeType = typeof(Edge);
-                    foreach (GraphElement element in changes.elementsToRemove)
-                    {
-                        if (element is Edge edge)
+                        if(edge is WeightedEdge weightedEdge && weightedEdge.WeightedTransition != null)
                         {
-                            DialogChoiceData choiceData = (DialogChoiceData)edge.output.userData;
-                            choiceData.NodeID = string.Empty;
+                            choiceData.Paths.Remove(weightedEdge.WeightedTransition);
                         }
                     }
                 }
+            }
 
-                return changes;
-            };
+            return changes;
         }
 
         public Vector2 GetLocalMousePosition(Vector2 mousePosition, bool isSearchWindow = false)
@@ -211,11 +253,11 @@ namespace Fab.Dialog
             Dictionary<string, string> copyIDByOriginal = new Dictionary<string, string>();
             foreach (GraphElement element in elements)
             {
-                if (element is DialogNode node)
+                if (element is DialogChoiceNode node)
                 {
                     DialogNodeData data = node.ToNodeData();
                     // create a new Guid for this node
-                    string newID = DialogNode.CreateGuid();
+                    string newID = DialogChoiceNode.CreateGuid();
                     // keep track of old and new guid
                     copyIDByOriginal.Add(data.ID, newID);
                     data.ID = newID;
@@ -229,12 +271,19 @@ namespace Fab.Dialog
             {
                 foreach (DialogChoiceData choice in data.Choices)
                 {
-                    if (!string.IsNullOrEmpty(choice.NodeID))
+                    for (int i = 0; i < choice.Paths.Count; i++)
                     {
-                        if (copyIDByOriginal.TryGetValue(choice.NodeID, out string copyID))
-                            choice.NodeID = copyID;
-                        else
-                            choice.NodeID = string.Empty;
+                        WeightedPath transition = choice.Paths[i];
+
+                        if (!string.IsNullOrEmpty(transition.TargetNodeID))
+                        {
+                            if (copyIDByOriginal.TryGetValue(transition.TargetNodeID, out string copyID))
+                                transition.TargetNodeID = copyID;
+                            else
+                                transition = new WeightedPath();
+                        }
+
+                        choice.Paths[i] = transition;
                     }
                 }
             }
@@ -259,7 +308,7 @@ namespace Fab.Dialog
                 // deselect all currently selected elements
                 ClearSelection();
 
-                Dictionary<string, DialogNode> nodesById = new Dictionary<string, DialogNode>();
+                Dictionary<string, DialogChoiceNode> nodesById = new Dictionary<string, DialogChoiceNode>();
 
                 foreach (DialogNodeData nodeData in copyData.nodes)
                 {
@@ -268,7 +317,7 @@ namespace Fab.Dialog
 
                     nodeData.Position += new Vector2(50, 50);
 
-                    DialogNode node = CreateNode(nodeData);
+                    DialogChoiceNode node = CreateNode(nodeData);
                     nodesById[node.ID] = node;
                     AddToSelection(node);
 

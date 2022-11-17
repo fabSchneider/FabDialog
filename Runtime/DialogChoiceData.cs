@@ -12,13 +12,18 @@ namespace Fab.Dialog
         {
             ID = Guid.NewGuid().ToString();
             Text = text;
+            Paths = new List<WeightedPath>();
         }
 
         public DialogChoiceData(DialogChoiceData other)
         {
             ID = other.ID;
             Text = other.Text;
-            NodeID = other.NodeID;
+            Paths = new List<WeightedPath>(other.Paths.Count);
+            for (int i = 0; i < other.Paths.Count; i++)
+            {
+                Paths.Add(new WeightedPath(other.Paths[i]));
+            }     
         }
 
         [field: SerializeField]
@@ -28,6 +33,24 @@ namespace Fab.Dialog
         public string Text { get; set; }
 
         [field: SerializeField]
-        public string NodeID { get; set; }
+        public List<WeightedPath> Paths { get; set; }
+    }
+
+    [Serializable]
+    public class WeightedPath
+    {
+        [field: SerializeField]
+        public string TargetNodeID { get; set; }
+
+        [field: SerializeField]
+        public float Weight { get; set; }
+
+        public WeightedPath() { }
+
+        public WeightedPath(WeightedPath other)
+        {
+            TargetNodeID = other.TargetNodeID;
+            Weight = other.Weight;
+        }
     }
 }

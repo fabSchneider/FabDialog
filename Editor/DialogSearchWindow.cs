@@ -52,13 +52,13 @@ namespace Fab.Dialog.Editor
             {
                 case DialogType.SingleChoice:
                     {
-                        DialogNode node = graphView.CreateNode(DialogType.SingleChoice, localMousePosition);
+                        DialogChoiceNode node = graphView.CreateNode(DialogType.SingleChoice, localMousePosition);
                         graphView.AddElement(node);
                         return true;
                     }
                 case DialogType.MultiChoice:
                     {
-                        DialogNode node = graphView.CreateNode(DialogType.MultiChoice, localMousePosition);
+                        DialogChoiceNode node = graphView.CreateNode(DialogType.MultiChoice, localMousePosition);
                         graphView.AddElement(node);
                         return true;
                     }

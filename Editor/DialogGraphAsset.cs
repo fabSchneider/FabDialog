@@ -7,7 +7,6 @@ namespace Fab.Dialog.Editor
     [CreateAssetMenu(fileName = "NewDialogGraph.asset", menuName = "Fab/Dialog Graph")]
     public class DialogGraphAsset : DialogAsset
     {
-
         [field: SerializeField]
         [field: HideInInspector]
         public Vector3 ViewPosition { get; set; }

@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace Fab.Dialog.Editor.Elements
 {
-    public class DialogNode : Node
+    public class DialogChoiceNode : Node
     {
         protected static readonly string ussClassname = "dialog-node";
         protected static readonly string mainClassname = ussClassname + "__main-container";
@@ -22,7 +22,6 @@ namespace Fab.Dialog.Editor.Elements
         protected static readonly string customDataClassname = ussClassname + "__custom-data-container";
         protected static readonly string helpButtonClassName = ussClassname + "__text-help-button";
 
-
         protected static readonly string textFoldoutName = "text-foldout";
         public string ID { get; set; }
 
@@ -31,7 +30,7 @@ namespace Fab.Dialog.Editor.Elements
         protected GraphView graphView;
         public List<DialogChoiceData> Choices { get; set; }
         public string Text { get; set; }
-        public DialogNode() : base() { }
+        public DialogChoiceNode() : base() { }
 
         public DialogType DialogType { get; set; }
 
@@ -99,8 +98,13 @@ namespace Fab.Dialog.Editor.Elements
 
             titleContainer.Insert(0, nameTextField);
 
-            Port inputPort = this.CreatePort("In", direction: Direction.Input, capacity: Port.Capacity.Multi);
+            Port inputPort = Port.Create<WeightedEdge>(
+                Orientation.Horizontal,
+                Direction.Input,
+                Port.Capacity.Multi,
+                typeof(bool));
 
+            inputPort.portName = "In";
             inputContainer.Add(inputPort);
 
             VisualElement customDataContainer = new VisualElement();
@@ -152,7 +156,6 @@ namespace Fab.Dialog.Editor.Elements
                 evt.StopPropagation();
                 //evt.PreventDefault();
             });
-
 
             textTextField.AddToClassList(textFieldClassname);
             textTextField.AddToClassList(quoteTextFieldClassname);

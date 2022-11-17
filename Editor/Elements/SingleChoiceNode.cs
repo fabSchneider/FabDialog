@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Fab.Dialog.Editor.Elements
 {
-    public class SingleChoiceNode : DialogNode
+    public class SingleChoiceNode : DialogChoiceNode
     {
         protected override void InitializeInternal(GraphView graphView, DialogNodeData nodeData)
         {
@@ -23,7 +23,13 @@ namespace Fab.Dialog.Editor.Elements
 
             foreach (DialogChoiceData choice in Choices)
             {
-                Port choicePort = this.CreatePort(choice.Text, direction: Direction.Output, capacity: Port.Capacity.Single);
+                Port choicePort = Port.Create<WeightedEdge>(
+                    Orientation.Horizontal,
+                    Direction.Output,
+                    Port.Capacity.Multi,
+                    typeof(bool));
+
+                choicePort.portName = choice.Text;
                 choicePort.userData = choice;
                 outputContainer.Add(choicePort);
             }

@@ -15,7 +15,7 @@ namespace Fab.Dialog.Editor
 
         private bool graphLoaded = false;
 
-        [UnityEditor.Callbacks.OnOpenAsset(1)]
+        [UnityEditor.Callbacks.OnOpenAsset(2)]
         public static bool OnOpenAsset(int instanceID, int line)
         {
             if (Selection.activeObject is DialogGraphAsset asset)

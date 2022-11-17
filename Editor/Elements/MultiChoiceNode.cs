@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace Fab.Dialog.Editor.Elements
 {
-    public class MultiChoiceNode : DialogNode
+    public class MultiChoiceNode : DialogChoiceNode
     {
         protected override void InitializeInternal(GraphView graphView, DialogNodeData nodeData)
         {
@@ -44,8 +44,13 @@ namespace Fab.Dialog.Editor.Elements
 
         public Port CreateChoicePort(DialogChoiceData choice)
         {
-            Port choicePort = this.CreatePort("", direction: Direction.Output, capacity: Port.Capacity.Single);
+            Port choicePort = Port.Create<WeightedEdge>(
+                Orientation.Horizontal, 
+                Direction.Output,
+                Port.Capacity.Multi, 
+                typeof(bool));
 
+            choicePort.portName = choice.Text;
             choicePort.userData = choice;
 
             Button deleteChoiceButton = DialogElementUtility.CreateButton("x", () =>

@@ -42,7 +42,7 @@ namespace Fab.Dialog.Editor
             });
 
             // save nodes
-            graphView.Query<DialogNode>().ForEach(dialogNode =>
+            graphView.Query<DialogChoiceNode>().ForEach(dialogNode =>
             {
                 DialogNodeData data = dialogNode.ToNodeData();
                 graphAsset.Nodes.Add(data);
@@ -69,13 +69,13 @@ namespace Fab.Dialog.Editor
                 return;
 
 
-            Dictionary<string, DialogNode> nodesById = new Dictionary<string, DialogNode>();
+            Dictionary<string, DialogChoiceNode> nodesById = new Dictionary<string, DialogChoiceNode>();
 
 
             // add nodes
             foreach (DialogNodeData nodeData in graphAsset.Nodes)
             {
-                DialogNode node = graphView.CreateNode(nodeData);
+                DialogChoiceNode node = graphView.CreateNode(nodeData);
                 nodesById.Add(nodeData.ID, node);
                 graphView.AddElement(node);
             }
@@ -90,7 +90,7 @@ namespace Fab.Dialog.Editor
                 graphView.Add(group);
                 foreach (string nodeID in groupData.NodeIDs)
                 {
-                    DialogNode node = nodesById[nodeID];
+                    DialogChoiceNode node = nodesById[nodeID];
                     group.AddElement(node);
                 }
             }
@@ -100,18 +100,25 @@ namespace Fab.Dialog.Editor
             graphView.ValidateViewTransform();
         }
 
-        public static void ConnectNodes(DialogGraphView graphView, Dictionary<string, DialogNode> nodesById)
+        public static void ConnectNodes(DialogGraphView graphView, Dictionary<string, DialogChoiceNode> nodesById)
         {
-            foreach (DialogNode node in nodesById.Values)
+            foreach (DialogChoiceNode node in nodesById.Values)
             {
                 foreach (DialogChoiceData choice in node.Choices)
                 {
-                    if (!string.IsNullOrEmpty(choice.NodeID))
+                    for (int i = 0; i < choice.Paths.Count; i++)
                     {
-                        Port otherPort = nodesById[choice.NodeID].inputContainer.Q<Port>();
-                        Port port = node.outputContainer.Query<Port>().Where(port => ((DialogChoiceData)port.userData).ID == choice.ID).First();
-                        Edge edge = port.ConnectTo(otherPort);
-                        graphView.AddElement(edge);
+                        WeightedPath transition = choice.Paths[i];
+
+                        if (!string.IsNullOrEmpty(transition.TargetNodeID))
+                        {
+                            Port otherPort = nodesById[transition.TargetNodeID].inputContainer.Q<Port>();
+                            Port port = node.outputContainer.Query<Port>().Where(port => ((DialogChoiceData)port.userData).ID == choice.ID).First();
+
+                            WeightedEdge weightedEdge = port.ConnectTo<WeightedEdge>(otherPort);
+                            weightedEdge.WeightedTransition = transition;
+                            graphView.AddElement(weightedEdge);
+                        }
                     }
                 }
             }
