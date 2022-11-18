@@ -23,6 +23,7 @@ namespace Fab.Dialog.Editor
             graphAsset.ViewScale = graphView.viewTransform.scale;
 
             graphAsset.Nodes.Clear();
+            graphAsset.Edges.Clear();
             graphAsset.Groups.Clear();
 
             Dictionary<Scope, DialogGroupData> groupDataByScope = new Dictionary<Scope, DialogGroupData>();
@@ -42,9 +43,9 @@ namespace Fab.Dialog.Editor
             });
 
             // save nodes
-            graphView.Query<DialogChoiceNode>().ForEach(dialogNode =>
+            graphView.Query<DialogNode>().ForEach(dialogNode =>
             {
-                DialogNodeData data = dialogNode.ToNodeData();
+                DialogNodeData data = dialogNode.Serialize();
                 graphAsset.Nodes.Add(data);
 
                 // add to group
@@ -53,6 +54,17 @@ namespace Fab.Dialog.Editor
                 {
                     groupData.NodeIDs.Add(dialogNode.ID);
                 }
+            });
+
+            // save edges
+            graphView.Query<Edge>().ForEach(edge =>
+            {
+                graphAsset.Edges.Add(new DialogEdgeData()
+                {
+                    Input = edge.input.viewDataKey,
+                    Output = edge.output.viewDataKey,
+                    Weight = edge is WeightedEdge we ? we.Weight : 1f
+                });
             });
 
             EditorUtility.SetDirty(graphAsset);
@@ -68,20 +80,15 @@ namespace Fab.Dialog.Editor
             if (graphAsset == null)
                 return;
 
-
-            Dictionary<string, DialogChoiceNode> nodesById = new Dictionary<string, DialogChoiceNode>();
-
-
             // add nodes
             foreach (DialogNodeData nodeData in graphAsset.Nodes)
             {
-                DialogChoiceNode node = graphView.CreateNode(nodeData);
-                nodesById.Add(nodeData.ID, node);
+                DialogNode node = graphView.CreateNode(nodeData);
                 graphView.AddElement(node);
             }
 
             // connect nodes
-            ConnectNodes(graphView, nodesById);
+            ConnectNodes(graphView, graphAsset.Edges);
 
             // add groups
             foreach (DialogGroupData groupData in graphAsset.Groups)
@@ -90,7 +97,7 @@ namespace Fab.Dialog.Editor
                 graphView.Add(group);
                 foreach (string nodeID in groupData.NodeIDs)
                 {
-                    DialogChoiceNode node = nodesById[nodeID];
+                    Node node = graphView.GetNodeByGuid(nodeID);
                     group.AddElement(node);
                 }
             }
@@ -100,28 +107,28 @@ namespace Fab.Dialog.Editor
             graphView.ValidateViewTransform();
         }
 
-        public static void ConnectNodes(DialogGraphView graphView, Dictionary<string, DialogChoiceNode> nodesById)
+        public static void ConnectNodes(DialogGraphView graphView, List<DialogEdgeData> edges)
         {
-            foreach (DialogChoiceNode node in nodesById.Values)
+            foreach (DialogEdgeData edge in edges)
             {
-                foreach (DialogChoiceData choice in node.Choices)
+                Port input = graphView.GetPortByGuid(edge.Input);
+                Port output = graphView.GetPortByGuid(edge.Output);
+
+                Edge e;
+                if (input.portType == typeof(bool))
                 {
-                    for (int i = 0; i < choice.Paths.Count; i++)
-                    {
-                        WeightedPath transition = choice.Paths[i];
-
-                        if (!string.IsNullOrEmpty(transition.TargetNodeID))
-                        {
-                            Port otherPort = nodesById[transition.TargetNodeID].inputContainer.Q<Port>();
-                            Port port = node.outputContainer.Query<Port>().Where(port => ((DialogChoiceData)port.userData).ID == choice.ID).First();
-
-                            WeightedEdge weightedEdge = port.ConnectTo<WeightedEdge>(otherPort);
-                            weightedEdge.WeightedTransition = transition;
-                            graphView.AddElement(weightedEdge);
-                        }
-                    }
+                    WeightedEdge we = input.ConnectTo<WeightedEdge>(output);
+                    we.Weight = edge.Weight;
+                    e = we;
                 }
+                else
+                {
+                    e = input.ConnectTo<Edge>(output);
+                }
+                graphView.FlagRefresh(e);
+                graphView.AddElement(e);
             }
         }
     }
 }
+

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -8,41 +9,50 @@ namespace Fab.Dialog.Editor.Elements
 {
     public class MultiChoiceNode : DialogChoiceNode
     {
-        protected override void InitializeInternal(GraphView graphView, DialogNodeData nodeData)
-        {
-            base.InitializeInternal(graphView, nodeData);
-            if(Choices.Count == 0)
-                Choices.Add(new DialogChoiceData("New Choice"));
 
-            DialogType = DialogType.MultiChoice;
+        public override DialogNodeData Serialize()
+        {
+            DialogNodeData data = base.Serialize();
+            data.Outputs = choicePorts.Select(p => new PortData() { Id = p.viewDataKey, Name = p.Q<TextField>().text }).ToList();
+            return data;
         }
 
-        protected override void Draw()
+        protected override void Deserialize(DialogNodeData nodeData)
         {
-            base.Draw();
+            base.Deserialize(nodeData);
+
+            NodeType = DialogNodeType.MultiChoice;
+
+            if(nodeData.Outputs == null)
+            {
+                Port choicePort = CreateChoicePort("New Choice");
+                choicePorts.Add(choicePort);
+                outputContainer.Add(choicePort);
+            }
+            else
+            {
+                foreach (PortData port in nodeData.Outputs)
+                {
+                    Port choicePort = CreateChoicePort(port.Name);
+                    choicePort.viewDataKey = port.Id;
+                    choicePorts.Add(choicePort);
+                    outputContainer.Add(choicePort);
+                }
+            }
 
             Button addChoiceButton = DialogElementUtility.CreateButton("Add Choice", () =>
             {
-                DialogChoiceData choice = new DialogChoiceData("New Choice");
-                Port choicePort = CreateChoicePort(choice);
-                Choices.Add(choice);
+                Port choicePort = CreateChoicePort("New Choice");
 
+                choicePorts.Add(choicePort);
                 outputContainer.Add(choicePort);
             });
 
-            addChoiceButton.AddToClassList(buttonClassname);
-
             mainContainer.Insert(1, addChoiceButton);
-
-            foreach (DialogChoiceData choice in Choices)
-            {
-                Port choicePort = CreateChoicePort(choice);
-                outputContainer.Add(choicePort);
-            }
             RefreshExpandedState();
         }
 
-        public Port CreateChoicePort(DialogChoiceData choice)
+        public Port CreateChoicePort(string name)
         {
             Port choicePort = Port.Create<WeightedEdge>(
                 Orientation.Horizontal, 
@@ -50,12 +60,11 @@ namespace Fab.Dialog.Editor.Elements
                 Port.Capacity.Multi, 
                 typeof(bool));
 
-            choicePort.portName = choice.Text;
-            choicePort.userData = choice;
+            choicePort.portName = "";
 
             Button deleteChoiceButton = DialogElementUtility.CreateButton("x", () =>
             {
-                if (Choices.Count < 2)
+                if (choicePorts.Count < 2)
                     return;
 
                 if (choicePort.connected)
@@ -63,24 +72,13 @@ namespace Fab.Dialog.Editor.Elements
                     graphView.DeleteElements(choicePort.connections);
                 }
 
-                DialogChoiceData choiceData = (DialogChoiceData)choicePort.userData;
-
-                Choices.Remove(choiceData);
                 graphView.RemoveElement(choicePort);
-
+                choicePorts.Remove(choicePort);
             });
 
-            deleteChoiceButton.AddToClassList(buttonClassname);
 
-
-            TextField choiceTextField = DialogElementUtility.CreateTextField(choice.Text, change =>
-            {
-                choice.Text = change.newValue;
-            });
-
-            choiceTextField.AddToClassList(textFieldClassname);
-            choiceTextField.AddToClassList(textFieldHiddenClassname);
-            choiceTextField.AddToClassList(choiceTextFieldClassname);
+            TextField choiceTextField = DialogElementUtility.CreateTextField(name);
+            choiceTextField.AddToClassList(DialogElementUtility.choiceTextFieldClassname);
 
             choicePort.Add(choiceTextField);
             choicePort.Add(deleteChoiceButton);

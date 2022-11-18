@@ -4,9 +4,10 @@ using UnityEngine;
 
 namespace Fab.Dialog
 {
-    public enum DialogType 
+    public enum DialogNodeType 
     {
         SingleChoice,
-        MultiChoice
+        MultiChoice,
+        Text
     }
 }

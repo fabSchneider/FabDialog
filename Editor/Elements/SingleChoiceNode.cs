@@ -7,31 +7,40 @@ namespace Fab.Dialog.Editor.Elements
 {
     public class SingleChoiceNode : DialogChoiceNode
     {
-        protected override void InitializeInternal(GraphView graphView, DialogNodeData nodeData)
+        protected override void Deserialize(DialogNodeData nodeData)
         {
-            base.InitializeInternal(graphView, nodeData);
+            base.Deserialize(nodeData);
 
-            if (Choices.Count == 0)
-                Choices.Add(new DialogChoiceData("Next"));
+            NodeType = DialogNodeType.SingleChoice;
 
-            DialogType = DialogType.SingleChoice;
-        }
-
-        protected override void Draw()
-        {
-            base.Draw();
-
-            foreach (DialogChoiceData choice in Choices)
+            if (nodeData.Outputs == null)
             {
                 Port choicePort = Port.Create<WeightedEdge>(
-                    Orientation.Horizontal,
-                    Direction.Output,
-                    Port.Capacity.Multi,
-                    typeof(bool));
+                Orientation.Horizontal,
+                Direction.Output,
+                Port.Capacity.Multi,
+                typeof(bool));
 
-                choicePort.portName = choice.Text;
-                choicePort.userData = choice;
+                choicePort.portName = "Next";
+
+                choicePorts.Add(choicePort);
                 outputContainer.Add(choicePort);
+            }
+            else
+            {
+                foreach (PortData port in nodeData.Outputs)
+                {
+                    Port choicePort = Port.Create<WeightedEdge>(
+                        Orientation.Horizontal,
+                        Direction.Output,
+                        Port.Capacity.Multi,
+                        typeof(bool));
+
+                    choicePort.portName = port.Name;
+                    choicePort.viewDataKey = port.Id;
+                    choicePorts.Add(choicePort);
+                    outputContainer.Add(choicePort);
+                }
             }
 
             RefreshExpandedState();

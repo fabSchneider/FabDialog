@@ -14,6 +14,9 @@ namespace Fab.Dialog.Editor
     {
         private DialogEditorWindow editorWindow;
         private DialogSearchWindow searchWindow;
+
+        private VisualElement updateDebugger;
+
         public DialogGraphView(DialogEditorWindow editorWindow) : base()
         {
             this.editorWindow = editorWindow;
@@ -38,13 +41,88 @@ namespace Fab.Dialog.Editor
             serializeGraphElements += OnCopy;
             unserializeAndPaste += OnPaste;
 
+
             graphViewChanged += OnGraphViewChanged;
+
+            schedule.Execute(RefreshData).Every(100);
+
+            SetupUpdateDebugger();
+        }
+
+        private void SetupUpdateDebugger()
+        {
+            updateDebugger = new VisualElement();
+            updateDebugger.style.backgroundColor = Color.gray;
+            updateDebugger.style.width = 200;
+            updateDebugger.style.position = Position.Absolute;
+            updateDebugger.style.right = 20;
+            updateDebugger.style.bottom = 20;
+
+            Label debuggerText = new Label();
+
+            debuggerText.schedule.Execute(() =>
+            {
+                string updateInfo = "Update Debugger \n\n";
+
+                foreach (Edge edge in refreshEdges)
+                {
+                    updateInfo += "Edge \n";
+                }
+
+                foreach (DialogNode node in refreshNodes)
+                {
+                    updateInfo += $"Node ({node.NodeName})\n";
+                }
+
+                debuggerText.text = updateInfo;
+            }).Every(50);
+            updateDebugger.Add(debuggerText);
+
+            Add(updateDebugger);
+        }
+
+        private HashSet<Edge> refreshEdges = new HashSet<Edge>();
+        private HashSet<DialogNode> refreshNodes = new HashSet<DialogNode>();
+
+        public void FlagRefresh(Edge edge)
+        {
+            refreshEdges.Add(edge);
+        }
+
+        public void FlagRefresh(DialogNode node)
+        {
+            refreshNodes.Add(node);
+        }
+
+        public void RefreshData()
+        {
+            foreach (Edge e in refreshEdges)
+            {
+                if (e.parent != null)
+                {
+                    if (e.input.node is DialogNode node)
+                    {
+                        e.input.userData = e.output.userData;
+                        refreshNodes.Add(node);
+                    }
+                }
+            }
+
+            refreshEdges.Clear();
+
+            foreach (DialogNode node in refreshNodes)
+            {
+                node.UpdateInputs();
+            }
+
+            refreshNodes.Clear();
         }
 
         [System.Serializable]
         public class GraphCopyData
         {
             public List<DialogNodeData> nodes;
+            public List<DialogEdgeData> edges;
         }
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
@@ -60,6 +138,9 @@ namespace Fab.Dialog.Editor
 
                 //if (startPort.node == port.node)
                 //    return;
+
+                if (startPort.portType != port.portType)
+                    return;
 
                 if (startPort.direction == port.direction)
                     return;
@@ -78,8 +159,8 @@ namespace Fab.Dialog.Editor
                 ContentZoomer.DefaultReferenceScale
                 );
 
-            this.AddManipulator(CreateNodeContextMenu("Add Single Choice Node", DialogType.SingleChoice));
-            this.AddManipulator(CreateNodeContextMenu("Add Multi Choice Node", DialogType.MultiChoice));
+            this.AddManipulator(CreateNodeContextMenu("Add Single Choice Node", DialogNodeType.SingleChoice));
+            this.AddManipulator(CreateNodeContextMenu("Add Multi Choice Node", DialogNodeType.MultiChoice));
 
             this.AddManipulator(CreateGroupContextMenu());
 
@@ -88,7 +169,7 @@ namespace Fab.Dialog.Editor
             this.AddManipulator(new RectangleSelector());
         }
 
-        private IManipulator CreateNodeContextMenu(string actionTitle, DialogType type)
+        private IManipulator CreateNodeContextMenu(string actionTitle, DialogNodeType type)
         {
             ContextualMenuManipulator ctxMenuManipulator = new ContextualMenuManipulator(
                 menuEvent => menuEvent.menu.AppendAction(actionTitle, actionEvent =>
@@ -121,19 +202,20 @@ namespace Fab.Dialog.Editor
             }
         }
 
-        public DialogChoiceNode CreateNode(DialogType type, Vector2 localPosition)
+        public DialogNode CreateNode(DialogNodeType type, Vector2 localPosition)
         {
             Type nodeType = Type.GetType($"Fab.Dialog.Editor.Elements.{type}Node");
-            DialogChoiceNode node = (DialogChoiceNode)Activator.CreateInstance(nodeType);
+            DialogNode node = (DialogNode)Activator.CreateInstance(nodeType);
             node.Initialize(this, localPosition);
 
             return node;
         }
 
-        public DialogChoiceNode CreateNode(DialogNodeData nodeData)
+        public DialogNode CreateNode(DialogNodeData nodeData)
         {
             Type nodeType = Type.GetType($"Fab.Dialog.Editor.Elements.{nodeData.DialogType}Node");
-            DialogChoiceNode node = (DialogChoiceNode)Activator.CreateInstance(nodeType);
+            DialogNode node = (DialogNode)Activator.CreateInstance(nodeType);
+
             node.Initialize(this, nodeData);
 
             return node;
@@ -172,46 +254,7 @@ namespace Fab.Dialog.Editor
             {
                 foreach (Edge edge in changes.edgesToCreate)
                 {
-                    // update choice data for each edge
-
-                    DialogChoiceNode nextNode = (DialogChoiceNode)edge.input.node;
-                    DialogChoiceData choiceData = (DialogChoiceData)edge.output.userData;
-
-                    WeightedPath transition = new WeightedPath()
-                    {
-                        TargetNodeID = nextNode.ID,
-                        Weight = 1f
-                    };
-
-                    choiceData.Paths.Add(transition);
-
-                    if (edge is WeightedEdge weightedEdge)
-                    {
-                        weightedEdge.WeightedTransition = transition;
-                    }                   
-                    
-                    //// update the weights on each weighted transition
-                    //// TODO: This should be done once after all transitions have been updated / removed
-                    //for (int i = 0; i < choiceData.Transitions.Count; i++)
-                    //{
-                    //    choiceData.Transitions[i].Weight = 1f / choiceData.Transitions.Count;
-                    //}
-
-                    // create/update weight label on the edge
-
-                    //Label weightLabel = edge.Q<Label>(name: "weight-label");
-                    //if(weightLabel == null)
-                    //{
-                    //    weightLabel = new Label();
-                    //    weightLabel.name = "weight-label";
-                    //    weightLabel.style.marginBottom = StyleKeyword.Auto;
-                    //    weightLabel.style.marginTop = StyleKeyword.Auto;
-                    //    weightLabel.style.marginLeft = StyleKeyword.Auto;
-                    //    weightLabel.style.marginRight = StyleKeyword.Auto;
-                    //    edge.edgeControl.Add(weightLabel);
-                    //}
-
-                    //weightLabel.text = 0.42f.ToString();
+                    FlagRefresh(edge);
                 }
             }
 
@@ -222,11 +265,11 @@ namespace Fab.Dialog.Editor
                 {
                     if (element is Edge edge)
                     {
-                        DialogChoiceData choiceData = (DialogChoiceData)edge.output.userData;
-
-                        if(edge is WeightedEdge weightedEdge && weightedEdge.WeightedTransition != null)
+                        if (edge.input.portType == typeof(string))
                         {
-                            choiceData.Paths.Remove(weightedEdge.WeightedTransition);
+                            edge.input.userData = null;
+                            if (edge.input.node is DialogNode node)
+                                FlagRefresh(node);
                         }
                     }
                 }
@@ -249,48 +292,30 @@ namespace Fab.Dialog.Editor
         private string OnCopy(IEnumerable<GraphElement> elements)
         {
             List<DialogNodeData> nodeData = new List<DialogNodeData>();
+            List<DialogEdgeData> edgeData = new List<DialogEdgeData>();
 
-            Dictionary<string, string> copyIDByOriginal = new Dictionary<string, string>();
             foreach (GraphElement element in elements)
             {
-                if (element is DialogChoiceNode node)
+                if (element is DialogNode node)
                 {
-                    DialogNodeData data = node.ToNodeData();
-                    // create a new Guid for this node
-                    string newID = DialogChoiceNode.CreateGuid();
-                    // keep track of old and new guid
-                    copyIDByOriginal.Add(data.ID, newID);
-                    data.ID = newID;
+                    DialogNodeData data = node.Serialize();
                     nodeData.Add(data);
                 }
-            }
-
-            // replace all ids in choice data with new id's or remove if they
-            // are referencing a node that was not copied
-            foreach (DialogNodeData data in nodeData)
-            {
-                foreach (DialogChoiceData choice in data.Choices)
+                else if (element is Edge e)
                 {
-                    for (int i = 0; i < choice.Paths.Count; i++)
+                    edgeData.Add(new DialogEdgeData()
                     {
-                        WeightedPath transition = choice.Paths[i];
-
-                        if (!string.IsNullOrEmpty(transition.TargetNodeID))
-                        {
-                            if (copyIDByOriginal.TryGetValue(transition.TargetNodeID, out string copyID))
-                                transition.TargetNodeID = copyID;
-                            else
-                                transition = new WeightedPath();
-                        }
-
-                        choice.Paths[i] = transition;
-                    }
+                        Input = e.input.viewDataKey,
+                        Output = e.output.viewDataKey,
+                        Weight = (e is WeightedEdge we) ? we.Weight : 1f
+                    });
                 }
             }
 
             GraphCopyData copyData = new GraphCopyData()
             {
-                nodes = nodeData
+                nodes = nodeData,
+                edges = edgeData
             };
 
             return JsonUtility.ToJson(copyData);
@@ -308,24 +333,66 @@ namespace Fab.Dialog.Editor
                 // deselect all currently selected elements
                 ClearSelection();
 
-                Dictionary<string, DialogChoiceNode> nodesById = new Dictionary<string, DialogChoiceNode>();
+                Dictionary<string, string> copyByOriginalPorts = new Dictionary<string, string>();
 
                 foreach (DialogNodeData nodeData in copyData.nodes)
                 {
                     // add an offset to the node position so that copy 
-                    //is not at the exact same position as the original
-
+                    // is not at the exact same position as the original
                     nodeData.Position += new Vector2(50, 50);
 
-                    DialogChoiceNode node = CreateNode(nodeData);
-                    nodesById[node.ID] = node;
+                    nodeData.Id = Guid.NewGuid().ToString();
+
+                    for (int i = 0; i < nodeData.Inputs.Count; i++)
+                    {
+                        PortData inPort = nodeData.Inputs[i];
+                        string newId = Guid.NewGuid().ToString();
+
+                        copyByOriginalPorts.Add(inPort.Id, newId);
+                        inPort.Id = newId;
+                        nodeData.Inputs[i] = inPort;
+                    }
+
+                    for (int i = 0; i < nodeData.Outputs.Count; i++)
+                    {
+                        PortData outPort = nodeData.Outputs[i];
+                        string newId = Guid.NewGuid().ToString();
+
+                        copyByOriginalPorts.Add(outPort.Id, newId);
+                        outPort.Id = newId;
+                        nodeData.Outputs[i] = outPort;
+                    }
+
+                    DialogNode node = CreateNode(nodeData);
+                    // update the id of the node data with the id
+                    // of the newly created node so that we can
+                    // use it when connecting the nodes;
+                    nodeData.Id = node.ID;
                     AddToSelection(node);
 
                     AddElement(node);
                 }
 
+                // remap edges
+                for (int i = copyData.edges.Count - 1 ; i >= 0; i--)
+                {
+                    DialogEdgeData edge = copyData.edges[i];
+
+                    // remove edges that connect with nodes outside of the copy selection
+                    if(!copyByOriginalPorts.TryGetValue(edge.Input, out string input) ||
+                       !copyByOriginalPorts.TryGetValue(edge.Output, out string output))
+                    {
+                        copyData.edges.RemoveAt(i);
+                        continue; 
+                    }
+
+                    edge.Input = input;
+                    edge.Output = output;
+                    copyData.edges[i] = edge;
+                }
+
                 // connect nodes
-                DialogGraphUtility.ConnectNodes(this, nodesById);
+                DialogGraphUtility.ConnectNodes(this, copyData.edges);
             }
         }
     }

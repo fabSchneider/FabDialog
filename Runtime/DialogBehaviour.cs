@@ -31,7 +31,7 @@ namespace Fab.Dialog
             nextDialog = Dialog;
 
             typeWritter = new TypewritterEffect(this);
-            typeWritter.TextToDisplay = nextDialog.text;
+            typeWritter.TextToDisplay = nextDialog.Text;
             typeWritter.Start();
         }
 
@@ -51,13 +51,13 @@ namespace Fab.Dialog
                 GUILayout.Label(typeWritter.CurrentText);
                 foreach (DialogChoice choice in current.choices)
                 {
-                    if (GUILayout.Button(choice.text))
+                    if (GUILayout.Button(choice.Text))
                     {
                         nextDialog = choice.transition.GetNext();
 
                         if (nextDialog != null)
                         {
-                            typeWritter.TextToDisplay = nextDialog.text;
+                            typeWritter.TextToDisplay = nextDialog.Text;
                             typeWritter.Start();
                         }
                     }

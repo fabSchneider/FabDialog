@@ -8,25 +8,28 @@ namespace Fab.Dialog
     [Serializable]
     public class DialogNodeData 
     {
-        [field: SerializeField]
-        public string ID { get; set; }
+        [field: SerializeField] public string Id { get; set; }
+        [field: SerializeField] public string Name { get; set; }
+        [field: SerializeField] public string Text { get; set; }
+        [field: SerializeField] public DialogNodeType DialogType { get; set; }
+        [field: SerializeField] public Vector2 Position { get; set; }
+        [field: SerializeField] public bool TextCollapsed { get; set; }
+        [field: SerializeField] public List<PortData> Inputs { get; set; }
+        [field: SerializeField] public List<PortData> Outputs { get; set; }
+    }
 
-        [field: SerializeField]
-        public string Name { get; set; }
-        
-        [field: SerializeField]
-        public string Text { get; set; }
+    [Serializable]
+    public struct DialogEdgeData
+    {
+        [field: SerializeField] public string Input { get; set; }
+        [field: SerializeField] public string Output { get; set; }
+        [field: SerializeField] public float Weight { get; set; }
+    }
 
-        [field: SerializeField]
-        public bool TextCollapsed { get; set; }
-
-        [field: SerializeField]
-        public List<DialogChoiceData> Choices { get; set; }
-        
-        [field: SerializeField]
-        public DialogType DialogType { get; set; }
-        
-        [field: SerializeField]
-        public Vector2 Position { get; set; }
+    [Serializable]
+    public struct PortData
+    {
+        [field: SerializeField] public string Id { get; set; }
+        [field: SerializeField] public string Name { get; set; }
     }
 }

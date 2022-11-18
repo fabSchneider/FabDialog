@@ -10,32 +10,7 @@ namespace Fab.Dialog.Editor.Elements
     {
         private FloatField weightField;
 
-        private WeightedPath weightedTransition;
-
-        public WeightedPath WeightedTransition
-        {
-            get { return weightedTransition; }
-            set
-            {
-                if (weightedTransition == value)
-                    return;
-
-                if(weightedTransition != null)
-                {
-                    weightField.UnregisterValueChangedCallback(OnWeightValueChange);
-                    weightField.value = 1f;
-                }
-
-                if(value != null)
-                {
-                    weightedTransition = value;
-                    weightField.value = weightedTransition.Weight;
-                    weightField.RegisterValueChangedCallback(OnWeightValueChange);
-                }
-            }
-        }
-
-        public float Weigth
+        public float Weight
         {
             get => weightField.value;
             set => weightField.value = value;
@@ -51,11 +26,6 @@ namespace Fab.Dialog.Editor.Elements
 
 
             edgeControl.Add(weightField);
-        }
-
-        private void OnWeightValueChange(ChangeEvent<float> change)
-        {
-            weightedTransition.Weight = change.newValue;
         }
     }
 }

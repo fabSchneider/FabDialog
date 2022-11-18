@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Fab.Dialog
@@ -9,12 +10,14 @@ namespace Fab.Dialog
         public DialogAsset asset;
 
         Dictionary<string, DialogNodeData> nodesByGuid;
+        Dictionary<string, DialogNodeData> nodesByPort;
         Dictionary<string, Dialog> dialogsByGuid;
 
         public DialogBuilder(DialogAsset asset)
         {
             this.asset = asset;
             nodesByGuid = new Dictionary<string, DialogNodeData>();
+            nodesByPort = new Dictionary<string, DialogNodeData>();
             dialogsByGuid = new Dictionary<string, Dialog>();
         }
 
@@ -25,11 +28,17 @@ namespace Fab.Dialog
 
             foreach (DialogNodeData node in asset.Nodes)
             {
-                nodesByGuid.Add(node.ID, node);
+                nodesByGuid.Add(node.Id, node);
                 if (node.Name == start)
                 {
                     startNode = node;
                 }
+
+                foreach (PortData port in node.Inputs)
+                    nodesByPort.Add(port.Id, node);
+
+                foreach (PortData port in node.Outputs)
+                    nodesByPort.Add(port.Id, node);
             }
 
             if (startNode != null)
@@ -45,8 +54,8 @@ namespace Fab.Dialog
             // create the dialog object
             Dialog dialog = new Dialog()
             {
-                ID = nodeData.ID,
-                text = nodeData.Text
+                ID = nodeData.Id,
+                textProvider = ResolveTextProvider.CreateProvider(nodeData, asset)
             };
 
             // add it to the created dialog dictionary 
@@ -54,12 +63,12 @@ namespace Fab.Dialog
             dialogsByGuid.Add(dialog.ID, dialog);
 
             // create all available choices for the dialog
-            DialogChoice[] choices = new DialogChoice[nodeData.Choices.Count];
+            DialogChoice[] choices = new DialogChoice[nodeData.Outputs.Count];
 
             for (int i = 0; i < choices.Length; i++)
             {
-                DialogChoiceData choiceData = nodeData.Choices[i];
-                choices[i] = CreateChoice(choiceData);
+                PortData choicePort = nodeData.Outputs[i];
+                choices[i] = CreateChoice(choicePort);
             }
 
             dialog.choices = choices;
@@ -67,56 +76,53 @@ namespace Fab.Dialog
             return dialog;
         }
 
-        private Dialog GetOrCreateDialog(string nodeID)
+        private Dialog GetOrCreateDialog(DialogNodeData node)
         {
-            // get the node data from the nodeID
-            if(!nodesByGuid.TryGetValue(nodeID, out DialogNodeData next))
-            {
-                // if no node exists for the node id exists, return null
-                return null;
-            }
 
             // recursively creates new dialogs unless the dialog has already been created
-            if (!dialogsByGuid.TryGetValue(next.ID, out Dialog nextDialog))
-                nextDialog = CreateDialog(next);
+            if (!dialogsByGuid.TryGetValue(node.Id, out Dialog nextDialog))
+                nextDialog = CreateDialog(node);
 
             return nextDialog;
         }
 
-        private DialogChoice CreateChoice(DialogChoiceData choiceData)
+        private DialogChoice CreateChoice(PortData choicePort)
         {
             // creates the dialog choice with the correct transitions
             // from a choiceData object
 
+            DialogEdgeData[] edges = asset.Edges.Where(e => e.Output == choicePort.Id).ToArray(); ;
+
 
             // create transition
             DialogTransition transition = null;
-            if(choiceData.Paths.Count == 0)
+            if(edges.Length == 0)
             {
                 transition = new SimpleDialogTransition(null);
             }
-            else if (choiceData.Paths.Count == 1)
+            else if (edges.Length == 1)
             {
                 // if only one path exists for the given choice
                 // create a simple transition
-                string nextNodeId = choiceData.Paths[0].TargetNodeID;
+                string nextPortId = edges[0].Input;
 
-                Dialog next = GetOrCreateDialog(nextNodeId);
+                Dialog next = GetOrCreateDialog(nodesByPort[nextPortId]);
                 transition = new SimpleDialogTransition(next);
             }
-            else if (choiceData.Paths.Count > 1)
+            else if (edges.Length > 1)
             {
                 // if multiple paths exists for the given choice 
                 // create a weighted transition
 
-                Dialog[] choices = new Dialog[choiceData.Paths.Count];
+                Dialog[] choices = new Dialog[edges.Length];
                 float[] weights = new float[choices.Length];
 
                 for (int j = 0; j < choices.Length; j++)
                 {
-                    WeightedPath weightedPath = choiceData.Paths[j];
-                    choices[j] = GetOrCreateDialog(weightedPath.TargetNodeID);
-                    weights[j] = weightedPath.Weight;
+                    DialogEdgeData edge = edges[j];
+                    string nextPortId = edge.Input;
+                    choices[j] = GetOrCreateDialog(nodesByPort[nextPortId]);
+                    weights[j] = edge.Weight;
                 }
 
                 transition = new WeightedDialogTransition(choices, weights);
@@ -124,7 +130,7 @@ namespace Fab.Dialog
 
             DialogChoice choice = new DialogChoice()
             {
-                text = choiceData.Text,
+                textProvider = new PlainTextProvider() { text = choicePort.Name },
                 transition = transition
             };
 

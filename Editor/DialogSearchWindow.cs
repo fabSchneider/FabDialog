@@ -23,21 +23,25 @@ namespace Fab.Dialog.Editor
             List<SearchTreeEntry> searchTreeEntries = new List<SearchTreeEntry>()
             {
                 new SearchTreeGroupEntry(new GUIContent("Create Element")),
-                new SearchTreeGroupEntry(new GUIContent("Dialog Node"), 1),
+                new SearchTreeGroupEntry(new GUIContent("Choice Node"), 1),
                 new SearchTreeEntry(new GUIContent("Single Choice", indentationIcon))
                 {
                     level = 2,
-                    userData = DialogType.SingleChoice
+                    userData = DialogNodeType.SingleChoice
                 },
                 new SearchTreeEntry(new GUIContent("Multi Choice", indentationIcon))
                 {
                     level = 2,
-                    userData = DialogType.MultiChoice
+                    userData = DialogNodeType.MultiChoice
                 },
-                new SearchTreeGroupEntry(new GUIContent("Dialog Group"), 1),
-                new SearchTreeEntry(new GUIContent("Single Group", indentationIcon))
+                new SearchTreeEntry(new GUIContent("Text", indentationIcon))
                 {
-                    level = 2,
+                    level = 1,
+                    userData = DialogNodeType.Text
+                },
+                new SearchTreeEntry(new GUIContent("Group", indentationIcon))
+                {
+                    level = 1,
                     userData = new Group()
                 },
             };
@@ -50,15 +54,21 @@ namespace Fab.Dialog.Editor
 
             switch (SearchTreeEntry.userData)
             {
-                case DialogType.SingleChoice:
+                case DialogNodeType.SingleChoice:
                     {
-                        DialogChoiceNode node = graphView.CreateNode(DialogType.SingleChoice, localMousePosition);
+                        DialogNode node = graphView.CreateNode(DialogNodeType.SingleChoice, localMousePosition);
                         graphView.AddElement(node);
                         return true;
                     }
-                case DialogType.MultiChoice:
+                case DialogNodeType.MultiChoice:
                     {
-                        DialogChoiceNode node = graphView.CreateNode(DialogType.MultiChoice, localMousePosition);
+                        DialogNode node = graphView.CreateNode(DialogNodeType.MultiChoice, localMousePosition);
+                        graphView.AddElement(node);
+                        return true;
+                    }
+                case DialogNodeType.Text:
+                    {
+                        DialogNode node = graphView.CreateNode(DialogNodeType.Text, localMousePosition);
                         graphView.AddElement(node);
                         return true;
                     }
