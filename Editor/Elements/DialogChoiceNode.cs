@@ -7,19 +7,8 @@ using UnityEngine.UIElements;
 
 namespace Fab.Dialog.Editor.Elements
 {
-
-
     public class DialogChoiceNode : DialogNode
     {
-        protected string ResolveText(string text)
-        {
-            foreach (Port textInput in textInputPorts)
-            {
-                text = text.Replace($"{{{textInput.portName}}}", textInput.userData as string);
-            }
-            return text;
-        }
-
 
         public static readonly string textFoldoutName = "text-foldout";
 
@@ -54,22 +43,22 @@ namespace Fab.Dialog.Editor.Elements
             Text = ResolveText(RawText);
         }
 
+        protected string ResolveText(string text)
+        {
+            foreach (Port textInput in textInputPorts)
+            {
+                text = text.Replace($"{{{textInput.portName}}}", textInput.userData as string);
+            }
+            return text;
+        }
+
         protected override void Deserialize(DialogNodeData nodeData)
         {
             base.Deserialize(nodeData);
 
-            //Choices = new List<DialogChoiceData>(nodeData.Choices.Count);
-
-            //foreach (DialogChoiceData choice in nodeData.Choices)
-             //   Choices.Add(new DialogChoiceData(choice));
-
             Text = ResolveText(nodeData.Text);
 
-            inPort = Port.Create<WeightedEdge>(
-               Orientation.Horizontal,
-               Direction.Input,
-               Port.Capacity.Multi,
-               typeof(bool));
+            inPort = DialogElementUtility.CreateChoicePort(Direction.Input);
 
             if (nodeData.Inputs != null && nodeData.Inputs.Count > 0)
             {
@@ -147,7 +136,7 @@ namespace Fab.Dialog.Editor.Elements
 
         private void AddTextInputPort(PortData portData)
         {
-            Port port = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(string));
+            Port port = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(string));
             port.portName = portData.Name;
             if (!string.IsNullOrEmpty(portData.Id))
                 port.viewDataKey = portData.Id;

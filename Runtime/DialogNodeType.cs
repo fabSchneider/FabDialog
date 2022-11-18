@@ -8,6 +8,7 @@ namespace Fab.Dialog
     {
         SingleChoice,
         MultiChoice,
-        Text
+        Text,
+        Pill
     }
 }

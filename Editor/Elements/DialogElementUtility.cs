@@ -102,5 +102,14 @@ namespace Fab.Dialog.Editor.Elements
             textFoldout.Add(editorTextField);
             return textFoldout;
         }
+
+        public static Port CreateChoicePort(Direction direction)
+        {
+            return Port.Create<Edge>(
+                Orientation.Horizontal,
+                direction,
+                Port.Capacity.Multi,
+                null);
+        }
     }
 }

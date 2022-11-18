@@ -7,6 +7,8 @@ using Fab.Dialog.Editor;
 using UnityEngine;
 using Fab.Dialog.Editor.Elements;
 using System;
+using System.Linq;
+using UnityEditor.UIElements;
 
 namespace Fab.Dialog.Editor
 {
@@ -74,6 +76,11 @@ namespace Fab.Dialog.Editor
                     updateInfo += $"Node ({node.NodeName})\n";
                 }
 
+                foreach (Port port in refreshPorts)
+                {
+                    updateInfo += $"Port ({port.portName})\n";
+                }
+
                 debuggerText.text = updateInfo;
             }).Every(50);
             updateDebugger.Add(debuggerText);
@@ -83,6 +90,7 @@ namespace Fab.Dialog.Editor
 
         private HashSet<Edge> refreshEdges = new HashSet<Edge>();
         private HashSet<DialogNode> refreshNodes = new HashSet<DialogNode>();
+        private HashSet<Port> refreshPorts = new HashSet<Port>();
 
         public void FlagRefresh(Edge edge)
         {
@@ -93,6 +101,13 @@ namespace Fab.Dialog.Editor
         {
             refreshNodes.Add(node);
         }
+
+        public void FlagRefresh(Port port)
+        {
+            refreshPorts.Add(port);
+        }
+
+
 
         public void RefreshData()
         {
@@ -115,6 +130,26 @@ namespace Fab.Dialog.Editor
                 node.UpdateInputs();
             }
 
+            foreach(Port port in refreshPorts)
+            {
+                if(port.direction == Direction.Input && port.portType == null)
+                {
+                    if(port.connections.Count() == 1)
+                    {
+                        // hide weight field
+                        port.connections.First().Q<FloatField>().style.display = DisplayStyle.None;
+                    }
+                    else
+                    {
+                        foreach (Edge e in port.connections)
+                        {
+                            e.Q<FloatField>().style.display = DisplayStyle.Flex;
+                        }
+                    }
+                }
+            }
+
+            refreshPorts.Clear();
             refreshNodes.Clear();
         }
 
@@ -127,27 +162,77 @@ namespace Fab.Dialog.Editor
 
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
         {
+            if (startPort.portType == null)
+                return GetCompatiblePorts(startPort, true);
+            else
+                return GetCompatiblePorts(startPort, false);
+        }
+
+        protected List<Port> GetCompatiblePorts(Port startPort, bool allowLoop)
+        {
             List<Port> compatiblePorts = new List<Port>();
 
+            Node startNode = startPort.node;
             ports.ForEach(port =>
             {
+                // don't allow connecting to itself
                 if (startPort == port)
                     return;
 
-                // NOTE: Allow connecting to node's own input
-
-                //if (startPort.node == port.node)
-                //    return;
-
+                // don't allow other portType
                 if (startPort.portType != port.portType)
                     return;
 
+                // don't allow same direction
                 if (startPort.direction == port.direction)
                     return;
+
+                if (!allowLoop)
+                {
+                    // check if connecting start node with target node
+                    // would create a loop
+
+                    // simple case: port connecting to another port on the same node
+                    if (startNode == port.node)
+                        return;
+
+                    if (DetectLoop(port, startNode))
+                        return;
+                }
 
                 compatiblePorts.Add(port);
             });
             return compatiblePorts;
+        }
+
+        private bool DetectLoop(Port port, Node startNode)
+        {
+            VisualElement oppositeContainer = port.direction == Direction.Output ? port.node.inputContainer : port.node.outputContainer;
+            // get all compatible ports on nodes opposite direction that are connected to other nodes
+            foreach (Port opposite in oppositeContainer.Query<Port>().Build())
+            {
+                if (opposite.portType != port.portType)
+                    continue;
+
+                // trace the connection to the new node
+                foreach (Edge e in opposite.connections)
+                {
+                    Port nextPort = opposite.direction == Direction.Input ? e.output : e.input;
+
+                    if (nextPort.node == startNode)
+                    {
+                        // if the node of traced port is the start node,
+                        // we have found a loop
+                        return true;
+                    }
+
+                    // otherwise keep tracing until a loop was found
+                    if(DetectLoop(nextPort, startNode))
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         private void AddManipulators()
@@ -161,6 +246,8 @@ namespace Fab.Dialog.Editor
 
             this.AddManipulator(CreateNodeContextMenu("Add Single Choice Node", DialogNodeType.SingleChoice));
             this.AddManipulator(CreateNodeContextMenu("Add Multi Choice Node", DialogNodeType.MultiChoice));
+            this.AddManipulator(CreateNodeContextMenu("Add Text Node", DialogNodeType.Text));
+            this.AddManipulator(CreateNodeContextMenu("Add Pill ", DialogNodeType.Pill));
 
             this.AddManipulator(CreateGroupContextMenu());
 
@@ -254,17 +341,27 @@ namespace Fab.Dialog.Editor
             {
                 foreach (Edge edge in changes.edgesToCreate)
                 {
+                    // if the edge is coming from a dialog port,
+                    // make it a weighted edge
+                    if (edge.output.portType == null)
+                        DialogGraphUtility.MakeWeightedEdge(edge, 1f);
+
                     FlagRefresh(edge);
+                    FlagRefresh(edge.input);
                 }
             }
 
+
+
             if (changes.elementsToRemove != null)
             {
-                Type edgeType = typeof(Edge);
                 foreach (GraphElement element in changes.elementsToRemove)
                 {
                     if (element is Edge edge)
                     {
+                        if(edge.input.portType == null)
+                            FlagRefresh(edge.input);
+
                         if (edge.input.portType == typeof(string))
                         {
                             edge.input.userData = null;
@@ -307,7 +404,7 @@ namespace Fab.Dialog.Editor
                     {
                         Input = e.input.viewDataKey,
                         Output = e.output.viewDataKey,
-                        Weight = (e is WeightedEdge we) ? we.Weight : 1f
+                        Weight = (e.userData != null) ? (float)e.userData : 1f
                     });
                 }
             }
@@ -374,16 +471,16 @@ namespace Fab.Dialog.Editor
                 }
 
                 // remap edges
-                for (int i = copyData.edges.Count - 1 ; i >= 0; i--)
+                for (int i = copyData.edges.Count - 1; i >= 0; i--)
                 {
                     DialogEdgeData edge = copyData.edges[i];
 
                     // remove edges that connect with nodes outside of the copy selection
-                    if(!copyByOriginalPorts.TryGetValue(edge.Input, out string input) ||
+                    if (!copyByOriginalPorts.TryGetValue(edge.Input, out string input) ||
                        !copyByOriginalPorts.TryGetValue(edge.Output, out string output))
                     {
                         copyData.edges.RemoveAt(i);
-                        continue; 
+                        continue;
                     }
 
                     edge.Input = input;

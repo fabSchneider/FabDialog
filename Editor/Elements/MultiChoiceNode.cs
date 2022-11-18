@@ -9,7 +9,6 @@ namespace Fab.Dialog.Editor.Elements
 {
     public class MultiChoiceNode : DialogChoiceNode
     {
-
         public override DialogNodeData Serialize()
         {
             DialogNodeData data = base.Serialize();
@@ -25,7 +24,7 @@ namespace Fab.Dialog.Editor.Elements
 
             if(nodeData.Outputs == null)
             {
-                Port choicePort = CreateChoicePort("New Choice");
+                Port choicePort = CreateMultiChoicePort("New Choice");
                 choicePorts.Add(choicePort);
                 outputContainer.Add(choicePort);
             }
@@ -33,7 +32,7 @@ namespace Fab.Dialog.Editor.Elements
             {
                 foreach (PortData port in nodeData.Outputs)
                 {
-                    Port choicePort = CreateChoicePort(port.Name);
+                    Port choicePort = CreateMultiChoicePort(port.Name);
                     choicePort.viewDataKey = port.Id;
                     choicePorts.Add(choicePort);
                     outputContainer.Add(choicePort);
@@ -42,7 +41,7 @@ namespace Fab.Dialog.Editor.Elements
 
             Button addChoiceButton = DialogElementUtility.CreateButton("Add Choice", () =>
             {
-                Port choicePort = CreateChoicePort("New Choice");
+                Port choicePort = CreateMultiChoicePort("New Choice");
 
                 choicePorts.Add(choicePort);
                 outputContainer.Add(choicePort);
@@ -52,25 +51,20 @@ namespace Fab.Dialog.Editor.Elements
             RefreshExpandedState();
         }
 
-        public Port CreateChoicePort(string name)
+        public Port CreateMultiChoicePort(string name)
         {
-            Port choicePort = Port.Create<WeightedEdge>(
-                Orientation.Horizontal, 
-                Direction.Output,
-                Port.Capacity.Multi, 
-                typeof(bool));
-
-            choicePort.portName = "";
+            Port choicePort = DialogElementUtility.CreateChoicePort(Direction.Output);
+            // port name will be displayed by the text field
+            choicePort.portName = string.Empty;
 
             Button deleteChoiceButton = DialogElementUtility.CreateButton("x", () =>
             {
+                // keep a minimum of one choice
                 if (choicePorts.Count < 2)
                     return;
 
                 if (choicePort.connected)
-                {
                     graphView.DeleteElements(choicePort.connections);
-                }
 
                 graphView.RemoveElement(choicePort);
                 choicePorts.Remove(choicePort);

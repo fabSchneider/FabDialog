@@ -5,6 +5,8 @@ using UnityEngine;
 using Fab.Dialog.Editor.Elements;
 using UnityEngine.UIElements;
 using UnityEditor;
+using UnityEditor.UIElements;
+using System.Linq;
 
 namespace Fab.Dialog.Editor
 {
@@ -63,7 +65,7 @@ namespace Fab.Dialog.Editor
                 {
                     Input = edge.input.viewDataKey,
                     Output = edge.output.viewDataKey,
-                    Weight = edge is WeightedEdge we ? we.Weight : 1f
+                    Weight = edge.userData != null ? (float)edge.userData : 1f
                 });
             });
 
@@ -114,20 +116,30 @@ namespace Fab.Dialog.Editor
                 Port input = graphView.GetPortByGuid(edge.Input);
                 Port output = graphView.GetPortByGuid(edge.Output);
 
-                Edge e;
-                if (input.portType == typeof(bool))
-                {
-                    WeightedEdge we = input.ConnectTo<WeightedEdge>(output);
-                    we.Weight = edge.Weight;
-                    e = we;
-                }
-                else
-                {
-                    e = input.ConnectTo<Edge>(output);
-                }
+                Edge e = input.ConnectTo(output);
+
+                //created weighted edge
+                if (input.portType == null)
+                    MakeWeightedEdge(e, edge.Weight);
+
                 graphView.FlagRefresh(e);
+                graphView.FlagRefresh(e.input);
                 graphView.AddElement(e);
             }
+        }
+
+        public static void MakeWeightedEdge(Edge e, float weight)
+        {
+            e.userData = weight;
+            FloatField weightField = new FloatField();
+            weightField.name = "edge__weight-field";
+            weightField.value = weight;
+            weightField.style.marginBottom = StyleKeyword.Auto;
+            weightField.style.marginTop = StyleKeyword.Auto;
+            weightField.style.marginLeft = StyleKeyword.Auto;
+            weightField.style.marginRight = StyleKeyword.Auto;
+            weightField.RegisterValueChangedCallback(change => e.userData = change.newValue);
+            e.edgeControl.Add(weightField);
         }
     }
 }

@@ -12,8 +12,7 @@ namespace Fab.Dialog.Editor.Elements
         public string ID => viewDataKey;
         public string NodeName { get; set; }
         public DialogNodeType NodeType { get; protected set; }
-        protected DialogGraphView graphView;
-        
+        protected DialogGraphView graphView;      
 
         public DialogNode() : base() { }
 

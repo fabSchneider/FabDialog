@@ -15,11 +15,7 @@ namespace Fab.Dialog.Editor.Elements
 
             if (nodeData.Outputs == null)
             {
-                Port choicePort = Port.Create<WeightedEdge>(
-                Orientation.Horizontal,
-                Direction.Output,
-                Port.Capacity.Multi,
-                typeof(bool));
+                Port choicePort = DialogElementUtility.CreateChoicePort(Direction.Output);
 
                 choicePort.portName = "Next";
 
@@ -30,11 +26,7 @@ namespace Fab.Dialog.Editor.Elements
             {
                 foreach (PortData port in nodeData.Outputs)
                 {
-                    Port choicePort = Port.Create<WeightedEdge>(
-                        Orientation.Horizontal,
-                        Direction.Output,
-                        Port.Capacity.Multi,
-                        typeof(bool));
+                    Port choicePort = DialogElementUtility.CreateChoicePort(Direction.Output);
 
                     choicePort.portName = port.Name;
                     choicePort.viewDataKey = port.Id;
@@ -42,7 +34,6 @@ namespace Fab.Dialog.Editor.Elements
                     outputContainer.Add(choicePort);
                 }
             }
-
             RefreshExpandedState();
         }
     }
