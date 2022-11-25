@@ -14,6 +14,14 @@
 	--dialog-quote-max-width: 600px;
 }
 
+.node--resolved > #node-border {
+    border-left-color: rgba(255, 0, 0, 255);
+    border-right-color: rgba(255, 0, 0, 255);
+    border-top-color: rgba(255, 0, 0, 255);
+    border-bottom-color: rgba(255, 0, 0, 255);
+}
+
+
 .dialog-node__extension-container{
 	background-color: var(--dialog-colors-window-1);
 	padding: 8px;
@@ -147,3 +155,14 @@ TextField{
 .unity-toggle__text{
 	margin-left: 2px;
 }
+
+.execute-port.input > #connector{
+	border-bottom-right-radius: 0px;
+	border-top-right-radius: 0px;
+}
+
+.execute-port.output > #connector{
+	border-bottom-left-radius: 0px;
+	border-top-left-radius: 0px;
+}
+

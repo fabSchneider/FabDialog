@@ -1,8 +1,8 @@
 {
   "name": "com.fab.dialog",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Dialog",
-  "description": "A dialog system for unity",
+  "description": "A graph based dialog system for unity",
   "unity": "2021.3",
   "unityRelease": "3f1",
   "keywords": [],

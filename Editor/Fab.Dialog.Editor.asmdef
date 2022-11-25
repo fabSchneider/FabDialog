@@ -2,7 +2,8 @@
     "name": "Fab.Dialog.Editor",
     "rootNamespace": "Fab.Dialog.Editor",
     "references": [
-        "GUID:0543a3be231078c47bbea5d472dcb9ad"
+        "GUID:0543a3be231078c47bbea5d472dcb9ad",
+        "GUID:478a2357cc57436488a56e564b08d223"
     ],
     "includePlatforms": [
         "Editor"
