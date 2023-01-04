@@ -140,6 +140,7 @@ namespace Fab.Dialog.Editor
 
         public void ApplyNodeState(NodeState nodeState)
         {
+            viewDataKey = nodeState.guid;
             titleTextField.value = stateNode.Name;
 
             for (int i = 0; i < nodeState.inputPorts.Length; i++)

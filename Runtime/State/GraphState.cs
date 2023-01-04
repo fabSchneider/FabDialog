@@ -16,7 +16,13 @@ namespace Fab.Dialog
     /// Holds generic state data identifiable by a key.
     /// </summary>
     [Serializable]
-    public class GraphStateData : Dictionary<string, object> { }
+    public class GraphStateData : Dictionary<string, object>, ICloneable
+    {
+        public object Clone()
+        {
+            return MemberwiseClone();
+        }
+    }
 
 
     public abstract class GraphStateBase
@@ -237,7 +243,6 @@ namespace Fab.Dialog
     [Serializable]
     public class EdgeState : GraphStateBase
     {
-        public string type;
         public string guid;
         public string output;
         public string input;
@@ -261,6 +266,17 @@ namespace Fab.Dialog
 
         public string[] inputPorts;
         public string[] outputPorts;
-        public NodeState() { }
+        public void CopyTo(NodeState target)
+        {
+            target.data = (GraphStateData)data.Clone();
+
+            target.type = type;
+            target.guid = guid;
+            target.title = title;
+            target.xPos = xPos;
+            target.yPos = yPos;
+            target.inputPorts = (string[])inputPorts.Clone();
+            target.outputPorts = (string[])outputPorts.Clone();
+        }
     }
 }

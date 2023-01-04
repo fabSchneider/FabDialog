@@ -11,6 +11,8 @@ namespace Fab.Dialog
         public static readonly string titleClassname = nodeClassname + "__title-container";
         public static readonly string extensionClassname = nodeClassname + "__extension-container";
 
+        public static readonly string nodeMissingClassname = nodeClassname + "--missing";
+
         public static readonly string buttonClassname = nodeClassname + "__button";
         public static readonly string customDataClassname = nodeClassname + "__custom-data-container";
         public static readonly string helpButtonClassName = nodeClassname + "__text-help-button";

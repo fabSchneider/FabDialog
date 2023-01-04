@@ -15,17 +15,9 @@ namespace Fab.Dialog
             if (dirtyNodes.Count() == 0)
                 return;
 
-            //Debug.Log("Dirty Nodes " + string.Join(" => ", dirtyNodes.Select(s => s.Name).ToArray()));
-
             // do topological sort of the graph nodes to find
             // the order of which nodes to update first
-            // List<StateNode> sorted = TopologicalSort(stateGraph, dirtyNodes, false);
-
-            // Debug.Log("Backward " + string.Join(" => ", sorted.Select(s => s.Name).ToArray()));
-
             List<StateNode> forwardSorted = TopologicalSort(stateGraph, dirtyNodes, true);
-
-            // Debug.Log("Forward " + string.Join(" => ", forwardSorted.Select(s => s.Name).ToArray()));
 
             // pull data from input nodes and resolve one after the other
             foreach (StateNode node in forwardSorted)

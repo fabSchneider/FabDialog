@@ -21,6 +21,13 @@
     border-bottom-color: rgba(255, 0, 0, 255);
 }
 
+.dialog-node--missing{
+	opacity: 0.7;
+}
+
+.dialog-node--missing > #node-border{
+	background-color: #990C0C;
+}
 
 .dialog-node__extension-container{
 	background-color: var(--dialog-colors-window-1);

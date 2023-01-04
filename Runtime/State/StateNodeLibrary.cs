@@ -27,6 +27,8 @@ namespace Fab.Dialog
         private static Dictionary<Type, StateNodeDescriptor> nodeLibrary;
         public static IEnumerable<StateNodeDescriptor> Descriptors => nodeLibrary.Values;
 
+        public static StateNodeDescriptor MissingNodeDescriptor = new StateNodeDescriptor(Guid.Empty, null, "Missing Node", typeof(MissingNode));
+
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
 
@@ -65,6 +67,11 @@ namespace Fab.Dialog
             }
         }
 
+        /// <summary>
+        /// Gets the node descriptor for the given id. Returns the missing node descriptor if no matching descriptor was found.
+        /// </summary>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
         public static StateNodeDescriptor GetDescriptor(Guid identifier)
         {
             foreach (StateNodeDescriptor descriptor in nodeLibrary.Values)
@@ -72,13 +79,20 @@ namespace Fab.Dialog
                 if (descriptor.identifier == identifier)
                     return descriptor;
             }
-            return null;
+            return MissingNodeDescriptor;
         }
 
+        /// <summary>
+        /// Gets the node descriptor for the given type. Returns the missing node descriptor if no matching descriptor was found.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static StateNodeDescriptor GetDescriptor(Type type)
         {
-            nodeLibrary.TryGetValue(type, out StateNodeDescriptor descriptor);
-            return descriptor;
+            if(nodeLibrary.TryGetValue(type, out StateNodeDescriptor descriptor))
+                return descriptor;
+
+            return MissingNodeDescriptor;
         }
     }
 }

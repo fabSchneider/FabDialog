@@ -19,6 +19,13 @@ namespace Fab.Dialog
         protected void Awake()
         {
             graph = new StateGraph(asset.GraphState);
+
+            if(graph.FindNode<MissingNode>() != null)
+            {
+                Debug.LogError("Graph contains missing nodes. Please resolve missing nodes before playing.");
+                enabled = false;
+            }
+
             resolver = new StateGraphResolver();
             resolver.ResolveGraph(graph, graph.Nodes);
         }

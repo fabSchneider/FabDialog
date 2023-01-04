@@ -73,7 +73,15 @@ namespace Fab.Dialog.Editor
                 StateNodeView node = (StateNodeView)graphView.GetNodeByGuid(state.guid);
                 if (node == null)
                 {
-                    node = graphView.CreateAndAddNode(state);
+                    try
+                    {
+                        node = graphView.CreateAndAddNode(state);
+                    }catch (ArgumentNullException)
+                    {
+                        Debug.LogError($"Node {state.guid} not found");
+                        continue;
+                    }
+    
                 }
 
                 matchedNodes.Add(node);
@@ -135,11 +143,8 @@ namespace Fab.Dialog.Editor
 
         public static EdgeState CreateEdgeState(Edge edge)
         {
-            StateNodeDescriptor descriptor = StateNodeLibrary.GetDescriptor(edge.GetType());
-
             EdgeState state = new EdgeState()
             {
-                type = descriptor == null ? null : descriptor.identifier.ToString(),
                 guid = edge.viewDataKey,
                 output = edge.output.viewDataKey,
                 input = edge.input.viewDataKey,
