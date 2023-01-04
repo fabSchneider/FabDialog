@@ -81,8 +81,8 @@ namespace Fab.Dialog
         public IReadOnlyList<NodeParameter> Inputs => inputs;
         public IReadOnlyList<NodeParameter> Outputs => outputs;
 
-        public Action<bool, int> onAddedParameter;
-        public Action<bool, int> onRemovingParameter;
+        public Action<bool, int> onAddedParameter { get; set; }
+        public Action<bool, int> onRemovingParameter { get; set; }
 
         public StateNode()
         {
@@ -127,6 +127,28 @@ namespace Fab.Dialog
             outputs.RemoveAt(index);
         }
 
+        public int RemoveInput(NodeParameter input)
+        {
+            int index = inputs.IndexOf(input);
+            if (index != -1)
+            {
+                onRemovingParameter?.Invoke(true, index);
+                inputs.RemoveAt(index);
+            }
+            return index;
+        }
+
+        public int RemoveOutput(NodeParameter output)
+        {
+            int index = outputs.IndexOf(output);
+            if (index != -1)
+            {
+                onRemovingParameter?.Invoke(false, index);
+                outputs.RemoveAt(index);
+            }
+            return index;
+        }
+
         public virtual void OnCreateGUI(VisualElement root)
         {
 
@@ -136,7 +158,6 @@ namespace Fab.Dialog
         {
 
         }
-
 
         public abstract void RegisterParameters();
 
