@@ -89,7 +89,6 @@ namespace Fab.Dialog
             inputs = new List<NodeParameter>();
             outputs = new List<NodeParameter>();
             RegisterParameters();
-
             NeedsResolve = true;
         }
 
@@ -132,6 +131,12 @@ namespace Fab.Dialog
         {
 
         }
+
+        public virtual void OnCreateParameterGUI(NodeParameter parameter, VisualElement parameterElement, bool isInput)
+        {
+
+        }
+
 
         public abstract void RegisterParameters();
 

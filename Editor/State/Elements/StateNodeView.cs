@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace Fab.Dialog.Editor
 {
-    public class StateNodeView : Node, ISerializable
+    public class StateNodeView : Node
     {
         protected TextField titleTextField;
 
@@ -76,6 +76,8 @@ namespace Fab.Dialog.Editor
             inPort.portName = parameter.Name;
             if (parameter.CanRename)
                 inPort.ConfigureRenamablePort(parameter);
+
+            parameter.Owner.OnCreateParameterGUI(parameter, inPort, true);
             return inPort;
         }
 
@@ -91,6 +93,8 @@ namespace Fab.Dialog.Editor
             outPort.portName = parameter.Name;
             if (parameter.CanRename)
                 outPort.ConfigureRenamablePort(parameter);
+
+            parameter.Owner.OnCreateParameterGUI(parameter, outPort, false);
             return outPort;
         }
 
@@ -134,11 +138,8 @@ namespace Fab.Dialog.Editor
             }
         }
 
-        public virtual void Deserialize(GraphStateBase state)
+        public void ApplyNodeState(NodeState nodeState)
         {
-            NodeState nodeState = (NodeState)state;
-
-            stateNode.Deserialize(nodeState);
             titleTextField.value = stateNode.Name;
 
             for (int i = 0; i < nodeState.inputPorts.Length; i++)
@@ -153,11 +154,6 @@ namespace Fab.Dialog.Editor
                 port.SetPortName(stateNode.Outputs[i].Name);
                 port.viewDataKey = nodeState.outputPorts[i];
             }
-        }
-
-        public virtual void Serialize(GraphStateBase state)
-        {
-            stateNode.Serialize(state);
         }
     }
 }

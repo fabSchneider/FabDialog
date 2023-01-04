@@ -168,21 +168,29 @@ namespace Fab.Dialog.Editor
 
         public StateNodeView CreateAndAddNode(StateNodeDescriptor descriptor, Vector2 position)
         {
-            StateNodeView node = elementFactory.Create(descriptor);
-            node.SetPosition(new Rect(position.x, position.y, 0f, 0f));
-            AddElement(node);
-            node.owner = this;
-            return node;
+            StateNode node = elementFactory.Create(descriptor);
+            StateNodeView nodeView = new StateNodeView();
+            nodeView.SetPosition(new Rect(position.x, position.y, 0f, 0f));
+            AddElement(nodeView);
+            nodeView.owner = this;
+            nodeView.Initialize(node);
+            return nodeView;
         }
 
         public StateNodeView CreateAndAddNode(NodeState state)
         {
             StateNodeDescriptor descriptor = StateNodeLibrary.GetDescriptor(new Guid(state.type));
-            StateNodeView node = elementFactory.Create(descriptor);
-            AddElement(node);
-            node.owner = this;
-            EditorGraphIO.ApplyNodeState(state, node);
-            return node;
+            StateNode node = elementFactory.Create(descriptor);
+
+            node.Deserialize(state);
+
+            StateNodeView nodeView = new StateNodeView();
+            nodeView.SetPosition(new Rect(state.xPos, state.yPos, 0f, 0f));
+            AddElement(nodeView);
+            nodeView.owner = this;
+            nodeView.Initialize(node);
+            nodeView.ApplyNodeState(state);
+            return nodeView;
         }
 
         public void ValidateViewTransform()

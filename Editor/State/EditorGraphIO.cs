@@ -39,11 +39,10 @@ namespace Fab.Dialog.Editor
             };
 
             if (nodeView is StateNodeView stateNodeView)
+            {
                 state.type = StateNodeLibrary.GetDescriptor(stateNodeView.StateNode.GetType()).identifier.ToString();
-
-            if (nodeView is ISerializable serializable)
-                serializable.Serialize(state);
-
+                stateNodeView.StateNode.Serialize(state);
+            }
             return state;
         }
         private static string[] GetPortData(VisualElement container)
@@ -69,7 +68,6 @@ namespace Fab.Dialog.Editor
             List<Node> matchedNodes = new List<Node>();
             foreach (NodeState state in nodeStates)
             {
-
                 // check if node already exists
                 StateNodeView node = (StateNodeView)graphView.GetNodeByGuid(state.guid);
                 if (node == null)
@@ -78,7 +76,7 @@ namespace Fab.Dialog.Editor
                 }
 
                 matchedNodes.Add(node);
-                ApplyNodeState(state, node);
+                node.ApplyNodeState(state);
             }
 
             // remove all unmatched nodes
@@ -87,15 +85,15 @@ namespace Fab.Dialog.Editor
                 graphView.RemoveElement(node);
         }
 
-        public static void ApplyNodeState(NodeState state, Node node)
-        {
-            node.viewDataKey = state.guid;
-            node.title = state.title;
-            node.SetPosition(new Rect(state.xPos, state.yPos, 0f, 0f));
+        //public static void ApplyNodeState(NodeState state, Node node)
+        //{
+        //    node.viewDataKey = state.guid;
+        //    node.title = state.title;
+        //    node.SetPosition(new Rect(state.xPos, state.yPos, 0f, 0f));
 
-            if (node is ISerializable serializable)
-                serializable.Deserialize(state);
-        }
+        //    if (node is ISerializable serializable)
+        //        serializable.Deserialize(state);
+        //}
         public static void ApplyEdgeStates(GraphView graphView, List<EdgeState> edgeStates)
         {
             List<Edge> matchedEdges = new List<Edge>();
