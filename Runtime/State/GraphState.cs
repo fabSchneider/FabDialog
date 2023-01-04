@@ -174,7 +174,23 @@ namespace Fab.Dialog
         /// <returns></returns>
         public float[] GetFloatArray(string key)
         {
-            return Array.ConvertAll((object[])data[key], x => Convert.ToSingle(x));
+            object obj = data[key];
+            if (obj == null)
+                return null;
+
+            if (obj is ICollection<float> collection)
+            {
+                float[] copy = new float[collection.Count];
+                collection.CopyTo(copy, 0);
+                return copy;
+            }
+
+            return Array.ConvertAll((object[])data[key], x =>
+            {
+                if (x == null)
+                    return default(float);
+                return Convert.ToSingle(x);
+            });
         }
 
         /// <summary>
@@ -184,14 +200,22 @@ namespace Fab.Dialog
         /// <returns></returns>
         public string[] GetStringArray(string key)
         {
+            object obj = data[key];
+            if (obj == null)
+                return null;
+
+            if (obj is ICollection<string> collection)
+            {
+                string[] copy = new string[collection.Count];
+                collection.CopyTo(copy, 0);
+                return copy;
+            }
+
             return Array.ConvertAll((object[])data[key], x =>
             {
-                object val = x;
-
-                if (val == null)
-                    return null;
-
-                return Convert.ToString(val);
+                if (x == null)
+                    return default(string);
+                return Convert.ToString(x);
             });
         }
     }
