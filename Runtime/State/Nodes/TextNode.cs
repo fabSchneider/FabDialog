@@ -10,6 +10,8 @@ namespace Fab.Dialog
     public class TextNode : StateNode
     {
         private TextField textField;
+        private string text;
+
         public override void RegisterParameters()
         {
             AddOutput(typeof(string), "Out");
@@ -23,29 +25,27 @@ namespace Fab.Dialog
             textField = new TextField();
             textField.RegisterValueChangedCallback(change =>
             {
-                Outputs[0].Value = change.newValue;
+                text = change.newValue;
                 NeedsResolve = true;
             });
 
-            textField.value = "Hello World";
-            Outputs[0].Value = textField.value;
+            textField.value = text;
             contentsContainer.Add(textField);
         }
 
         public override void Resolve()
         {
+            Outputs[0].Value = text;
         }
 
         protected override void Serialize(NodeState state)
         {
-            state.Add("text", Outputs[0].GetOrDefault<string>());
+            state.Add("text", text);
         }
 
         protected override void Deserialize(NodeState state)
         {
-            string text = state.GetString("text");
-            Outputs[0].Value = text;
-            textField?.SetValueWithoutNotify(text);
+            text = state.GetString("text");
         }
 
     }
