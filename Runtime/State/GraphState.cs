@@ -220,6 +220,9 @@ namespace Fab.Dialog
         }
     }
 
+    /// <summary>
+    /// Holds the state of a graph
+    /// </summary>
     [Serializable]
     public class GraphState : GraphStateBase
     {
@@ -228,7 +231,9 @@ namespace Fab.Dialog
     }
 
 
-
+    /// <summary>
+    /// Holds the state of an edge
+    /// </summary>
     [Serializable]
     public class EdgeState : GraphStateBase
     {
@@ -242,7 +247,7 @@ namespace Fab.Dialog
 
 
     /// <summary>
-    /// Holds the state of a game object
+    /// Holds the state of a node
     /// </summary>
     [Serializable]
     public class NodeState : GraphStateBase
