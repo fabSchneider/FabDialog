@@ -15,6 +15,7 @@ namespace Fab.Dialog.Editor
         {
             return Guid.NewGuid().ToString();
         }
+
         public static List<NodeState> GetNodeState(GraphView graphView)
         {
             List<NodeState> nodes = new List<NodeState>();
@@ -85,15 +86,6 @@ namespace Fab.Dialog.Editor
                 graphView.RemoveElement(node);
         }
 
-        //public static void ApplyNodeState(NodeState state, Node node)
-        //{
-        //    node.viewDataKey = state.guid;
-        //    node.title = state.title;
-        //    node.SetPosition(new Rect(state.xPos, state.yPos, 0f, 0f));
-
-        //    if (node is ISerializable serializable)
-        //        serializable.Deserialize(state);
-        //}
         public static void ApplyEdgeStates(GraphView graphView, List<EdgeState> edgeStates)
         {
             List<Edge> matchedEdges = new List<Edge>();
@@ -124,7 +116,6 @@ namespace Fab.Dialog.Editor
             }
         }
 
-
         public static List<Edge> ApplyEdgeStatesCopy(GraphView graphView, List<EdgeState> edgeStates)
         {
             List<Edge> createdEdges = new List<Edge>();
@@ -141,7 +132,6 @@ namespace Fab.Dialog.Editor
 
             return createdEdges;
         }
-
 
         public static EdgeState CreateEdgeState(Edge edge)
         {
@@ -191,8 +181,6 @@ namespace Fab.Dialog.Editor
                 if (edge.input != null && edge.output != null)
                     edges.Add(CreateEdgeState(edge));
             }
-
-
             return edges;
         }
 
