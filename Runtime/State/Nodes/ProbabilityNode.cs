@@ -47,6 +47,17 @@ namespace Fab.Dialog
                 parameterElement.Add(floatField);
 
                 parameterElement.Add(StateGraphGUI.CreateHelpButton(() => Debug.Log(parameter.Name)));
+
+                Button removeButton = new Button(() =>
+                {
+                    if (Outputs.Count > 1)
+                    {
+                        int index = RemoveOutput(parameter);
+                        probabilities.RemoveAt(Outputs.Count - 1);
+                    }
+                });
+                removeButton.text = "-";
+                parameterElement.Add(removeButton);
             }
         }
 
@@ -62,17 +73,6 @@ namespace Fab.Dialog
             });
             addButton.text = "Add Path";
             contentsContainer.Add(addButton);
-
-            Button removeButton = new Button(() =>
-            {
-                if (Outputs.Count > 1)
-                {
-                    probabilities.RemoveAt(Outputs.Count - 1);
-                    RemoveOutput(Outputs.Count - 1);
-                }
-            });
-            removeButton.text = "Remove Path";
-            contentsContainer.Add(removeButton);
         }
 
         public override NodeParameter Execute()
