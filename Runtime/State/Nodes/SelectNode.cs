@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Fab.Dialog
 {
     [StateNode(
-    name: "Logic/Select",
+    name: "Flow/Select",
     identifier: "FA7C386F-2C4F-4109-827F-DB7DD0E6B185")]
     public class SelectNode : StateNode
     {

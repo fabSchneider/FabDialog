@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Fab.Dialog
 {
     [StateNode(
-        name: "Logic/Branch",
+        name: "Flow/Branch",
         identifier: "6138BE93-3C3B-4F51-93AF-ADBEEEA923F3")]
     public class BranchNode : ExecuteNode
     {
